@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微光 · 深夜说给谁听</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#110d16; --surface:#1a1520; --surface-2:#221b29; --surface-3:#2a2231;
+  --border:#312838; --text:#f2ecf4; --text-muted:#948b9c; --text-faint:#6b6272; --accent:#b8607a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans SC',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;overflow:hidden;}
+.serif{font-family:'Noto Serif SC','Songti SC',serif;}
+button,select,textarea,input{font-family:inherit;}
+#app{display:flex;height:100vh;position:relative;}
+
+.ambient{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(600px 400px at 85% 8%, var(--glow-color, #b8607a) 0%, transparent 70%);opacity:0.10;transition:background 1.2s ease;animation:breathe 8s ease-in-out infinite;}
+@keyframes breathe{0%,100%{opacity:0.08;}50%{opacity:0.16;}}
+
+#sidebar{width:280px;min-width:280px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:2;position:relative;transition:margin-left .25s ease;}
+#sidebar.collapsed{margin-left:-280px;}
+.brand{padding:24px 20px 12px;}
+.brand h1{font-size:22px;font-weight:700;letter-spacing:1px;}
+.brand p{font-size:12px;color:var(--text-faint);margin-top:4px;letter-spacing:2px;text-transform:uppercase;}
+.nav-list{padding:6px 10px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:12px;cursor:pointer;font-size:13.5px;color:var(--text-muted);transition:background .15s ease;}
+.nav-item:hover{background:var(--surface-2);color:var(--text);}
+.nav-item.active{background:var(--surface-2);color:var(--text);}
+.nav-icon{width:20px;text-align:center;flex-shrink:0;}
+.nav-divider{height:1px;background:var(--border);margin:8px 16px;}
+.persona-list{flex:1;overflow-y:auto;padding:2px 10px 8px;}
+.persona-item{display:flex;gap:12px;align-items:center;padding:12px 10px;border-radius:12px;cursor:pointer;transition:background .15s ease;margin-bottom:2px;position:relative;}
+.persona-item:hover{background:var(--surface-2);}
+.persona-item.active{background:var(--surface-2);}
+.p-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;flex-shrink:0;color:#100c14;position:relative;}
+.unread-dot{position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);}
+.p-meta{min-width:0;flex:1;}
+.p-name{font-size:14px;font-weight:500;}
+.p-preview{font-size:12px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.p-del{display:none;background:none;border:none;color:var(--text-faint);font-size:16px;cursor:pointer;padding:4px;flex-shrink:0;}
+.persona-item:hover .p-del{display:block;}
+.p-del:hover{color:var(--accent);}
+.add-persona-btn{display:flex;align-items:center;gap:10px;padding:12px 10px;margin:4px 2px 8px;border:1px dashed var(--border);border-radius:12px;cursor:pointer;color:var(--text-muted);font-size:13px;transition:all .15s ease;}
+.add-persona-btn:hover{border-color:var(--accent);color:var(--text);}
+.add-persona-btn .plus{width:28px;height:28px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.sidebar-foot{padding:14px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--text-faint);line-height:1.6;}
+
+#main{flex:1;display:flex;flex-direction:column;min-width:0;z-index:1;position:relative;}
+
+#home-view,#gallery-view,#moments-view{display:none;flex-direction:column;height:100%;overflow-y:auto;padding:28px 32px;}
+.view-head{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+#menu-toggle-home,#menu-toggle-gallery{display:none;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;}
+.view-title{font-family:'Noto Serif SC',serif;font-size:22px;}
+.view-sub{font-size:12.5px;color:var(--text-faint);margin-bottom:22px;}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+.p-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .15s ease;position:relative;}
+.p-card:hover{border-color:var(--accent);}
+.pc-top{display:flex;gap:12px;align-items:center;margin-bottom:12px;}
+.pc-meta .pc-name{font-size:14.5px;font-weight:500;}
+.pc-meta .pc-tag{font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+.pc-stage{font-size:11px;color:var(--text-faint);margin-bottom:6px;}
+.pc-bar{height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden;margin-bottom:10px;}
+.pc-bar-fill{height:100%;border-radius:2px;}
+.pc-preview{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.group-card{background:var(--surface);border:1px dashed var(--border);border-radius:14px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:20px;transition:border-color .15s ease;}
+.group-card:hover{border-color:var(--accent);}
+.group-stack{display:flex;}
+.group-stack .p-avatar{width:34px;height:34px;font-size:12px;margin-left:-10px;border:2px solid var(--surface);}
+.group-stack .p-avatar:first-child{margin-left:0;}
+
+.mem-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px;}
+.mem-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.mem-who{font-size:12.5px;color:var(--text-muted);}
+.mem-label{font-size:11px;color:var(--text-faint);letter-spacing:2px;text-transform:uppercase;}
+.mem-text{font-family:'Noto Serif SC',serif;font-style:italic;color:var(--text-muted);line-height:1.8;font-size:13.5px;}
+.mem-empty{color:var(--text-faint);font-size:13px;padding:40px 0;text-align:center;}
+
+.moment-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:14px;}
+.moment-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.moment-head .p-avatar{width:36px;height:36px;font-size:14px;}
+.moment-name{font-size:13.5px;font-weight:500;}
+.moment-time{font-size:11px;color:var(--text-faint);margin-top:1px;}
+.moment-text{font-size:14px;line-height:1.75;color:var(--text);margin-bottom:12px;}
+.moment-actions{display:flex;gap:16px;padding-top:8px;border-top:1px solid var(--border);}
+.moment-action{background:none;border:none;color:var(--text-faint);font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:5px;}
+.moment-action:hover{color:var(--text);}
+.moment-action.liked{color:var(--accent);}
+.moment-comments{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;}
+.moment-comment{font-size:12.5px;line-height:1.6;color:var(--text-muted);}
+.moment-comment .c-name{color:var(--text);font-weight:500;}
+.moment-comment-input{display:none;gap:8px;margin-top:10px;}
+.moment-comment-input.open{display:flex;}
+.moment-comment-input input{flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 12px;font-size:12.5px;outline:none;}
+.moment-comment-input input:focus{border-color:var(--accent);}
+.moment-comment-input button{background:var(--accent);border:none;color:#fff;border-radius:10px;padding:0 14px;font-size:12.5px;cursor:pointer;}
+
+#chat-shell{display:flex;flex-direction:column;height:100%;}
+#chat-header{display:flex;align-items:center;gap:14px;padding:14px 24px;border-bottom:1px solid var(--border);background:rgba(26,21,32,0.6);backdrop-filter:blur(6px);flex-wrap:wrap;}
+#menu-toggle{display:none;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:4px;}
+.glow-avatar{position:relative;width:40px;height:40px;flex-shrink:0;}
+.glow-avatar::before{content:'';position:absolute;inset:-8px;border-radius:50%;background:var(--accent);opacity:0.35;filter:blur(10px);animation:pulse 3.2s ease-in-out infinite;}
+.glow-avatar .p-avatar{position:relative;width:40px;height:40px;font-size:15px;}
+@keyframes pulse{0%,100%{opacity:0.25;transform:scale(0.9);}50%{opacity:0.5;transform:scale(1.08);}}
+#header-meta{flex:1;min-width:160px;}
+#header-name{font-size:16px;font-weight:500;cursor:pointer;}
+#header-stage-row{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;}
+#header-stage{font-size:11px;color:var(--text-faint);white-space:nowrap;}
+#header-days{font-size:11px;color:var(--text-faint);white-space:nowrap;}
+.stage-bar{width:60px;height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden;flex-shrink:0;}
+.stage-bar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s ease;}
+.head-btn{background:none;border:1px solid var(--border);color:var(--text-muted);font-size:12px;padding:6px 12px;border-radius:20px;cursor:pointer;transition:all .15s ease;white-space:nowrap;}
+.head-btn:hover{border-color:var(--accent);color:var(--text);}
+.head-btn:disabled{opacity:.45;cursor:default;}
+.head-btn:disabled:hover{border-color:var(--border);color:var(--text-muted);}
+#header-actions{display:flex;gap:8px;position:relative;flex-wrap:wrap;}
+
+#settings-pop{position:absolute;top:44px;right:0;width:250px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px;display:none;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.4);}
+#settings-pop.open{display:block;}
+#settings-pop label{display:block;font-size:11px;color:var(--text-faint);margin:10px 0 4px;}
+#settings-pop label:first-child{margin-top:0;}
+#settings-pop select{width:100%;background:var(--surface-3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 8px;font-size:12.5px;outline:none;}
+
+#messages{flex:1;overflow-y:auto;padding:28px 24px;display:flex;flex-direction:column;gap:16px;}
+.msg-row{display:flex;max-width:72%;flex-direction:column;}
+.msg-row.user{align-self:flex-end;align-items:flex-end;}
+.msg-row.assistant{align-self:flex-start;align-items:flex-start;}
+.msg-speaker{font-size:11px;color:var(--text-faint);margin-bottom:3px;padding:0 4px;}
+.bubble{padding:12px 16px;border-radius:16px;font-size:14.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;}
+.msg-row.assistant .bubble{background:var(--surface-2);border-left:2px solid var(--accent);border-radius:4px 16px 16px 16px;}
+.msg-row.user .bubble{background:var(--accent);color:#fff;border-radius:16px 4px 16px 16px;}
+.msg-time{font-size:10px;color:var(--text-faint);margin-top:4px;padding:0 4px;}
+
+.story-row{align-self:center;max-width:84%;width:100%;display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0;}
+.story-label{font-size:11px;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;}
+.story-card{font-family:'Noto Serif SC',serif;font-size:14px;line-height:1.9;color:var(--text-muted);text-align:center;font-style:italic;padding:6px 10px;}
+.story-divider{width:36px;height:1px;background:var(--border);}
+
+.event-row{align-self:center;margin:2px 0;}
+.event-pill{font-size:11.5px;color:var(--text-faint);background:var(--surface-2);border:1px solid var(--border);padding:5px 14px;border-radius:20px;}
+
+.typing{display:flex;gap:4px;padding:14px 16px;background:var(--surface-2);border-left:2px solid var(--accent);border-radius:4px 16px 16px 16px;width:fit-content;}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--text-faint);animation:blink 1.2s infinite;}
+.typing span:nth-child(2){animation-delay:.2s;}
+.typing span:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,80%,100%{opacity:0.3;}40%{opacity:1;}}
+
+#input-area{padding:16px 24px 22px;border-top:1px solid var(--border);}
+#input-row{display:flex;gap:10px;align-items:flex-end;background:var(--surface-2);border:1px solid var(--border);border-radius:18px;padding:8px 8px 8px 16px;}
+#input-row:focus-within{border-color:var(--accent);}
+#msg-input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:14.5px;line-height:1.6;resize:none;max-height:120px;padding:8px 0;}
+#msg-input::placeholder{color:var(--text-faint);}
+#send-btn{background:var(--accent);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s ease;}
+#send-btn:disabled{opacity:0.4;cursor:default;}
+#send-btn svg{width:16px;height:16px;}
+
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(8,6,10,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:440px;max-height:86vh;overflow-y:auto;padding:24px;}
+.modal h2{font-family:'Noto Serif SC',serif;font-size:19px;margin-bottom:18px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;}
+.field input[type=text],.field textarea,.field select{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13.5px;outline:none;resize:vertical;}
+.field input[type=text]:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);}
+.field textarea{min-height:64px;line-height:1.6;}
+.field-row{display:flex;gap:10px;}
+.field-row .field{flex:1;}
+.swatches{display:flex;gap:8px;flex-wrap:wrap;}
+.swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+.swatch.selected{border-color:var(--text);}
+.modal-actions{display:flex;gap:10px;margin-top:20px;}
+.modal-actions button{flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--text);font-size:13.5px;cursor:pointer;}
+.modal-actions .primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.modal-actions button:hover{opacity:.9;}
+
+.gift-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.gift-card{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px 12px;cursor:pointer;text-align:center;transition:border-color .15s ease;}
+.gift-card:hover{border-color:var(--accent);}
+.gift-icon{font-size:22px;margin-bottom:6px;}
+.gift-name{font-size:13px;}
+.gift-pts{font-size:11px;color:var(--text-faint);margin-top:2px;}
+
+.check-row{display:flex;align-items:center;gap:10px;padding:10px 6px;border-radius:10px;cursor:pointer;}
+.check-row:hover{background:var(--surface-2);}
+.check-row input{width:16px;height:16px;accent-color:var(--accent);}
+
+.profile-head{display:flex;gap:14px;align-items:center;margin-bottom:16px;}
+.profile-head .p-avatar{width:56px;height:56px;font-size:20px;}
+.profile-name{font-size:18px;font-weight:500;}
+.profile-tag{font-size:12.5px;color:var(--text-faint);margin-top:3px;}
+.trait-row{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 16px;}
+.trait-chip{font-size:11.5px;padding:4px 10px;border-radius:20px;background:var(--surface-2);color:var(--text-muted);border:1px solid var(--border);}
+.profile-bio{font-size:13.5px;line-height:1.9;color:var(--text-muted);margin-bottom:16px;}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stat-box{background:var(--surface-2);border-radius:10px;padding:10px 12px;}
+.stat-label{font-size:10.5px;color:var(--text-faint);}
+.stat-val{font-size:13.5px;margin-top:3px;}
+
+.bottom-tabbar{display:none;position:fixed;left:0;right:0;bottom:0;height:58px;background:var(--surface);border-top:1px solid var(--border);z-index:5;}
+.bt-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--text-faint);font-size:10.5px;cursor:pointer;position:relative;}
+.bt-tab .bt-icon{font-size:19px;line-height:1;}
+.bt-tab.active{color:var(--accent);}
+.bt-dot{position:absolute;top:4px;right:calc(50% - 16px);width:7px;height:7px;border-radius:50%;background:var(--accent);}
+
+@media (max-width:720px){
+  #sidebar{position:fixed;left:0;top:0;bottom:0;z-index:10;margin-left:-280px;box-shadow:0 0 40px rgba(0,0,0,.4);}
+  #sidebar.open{margin-left:0;}
+  #menu-toggle,#menu-toggle-home,#menu-toggle-gallery,#menu-toggle-moments{display:none;}
+  .msg-row{max-width:86%;}
+  .bottom-tabbar{display:flex;}
+  #home-view,#gallery-view,#moments-view{padding-bottom:74px;}
+  #input-area{padding-bottom:74px;}
+}
+</style>
+</head>
+<body>
+<div class="ambient" id="ambient"></div>
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand"><h1 class="serif">微光</h1><p>深夜 · 说给谁听</p></div>
+    <div class="nav-list">
+      <div class="nav-item" id="nav-home"><span class="nav-icon">⌂</span>首页总览</div>
+      <div class="nav-item" id="nav-group"><span class="nav-icon">◎</span>群聊</div>
+      <div class="nav-item" id="nav-moments"><span class="nav-icon">▣</span>朋友圈</div>
+      <div class="nav-item" id="nav-gallery"><span class="nav-icon">✦</span>回忆相册</div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="persona-list" id="persona-list"></div>
+    <div class="sidebar-foot">对话与剧情由 AI 生成，用于陪伴与放松，请理性看待。</div>
+  </aside>
+
+  <main id="main">
+    <div id="home-view">
+      <div class="view-head"><button id="menu-toggle-home">☰</button><div class="view-title serif">首页</div></div>
+      <div class="view-sub">所有人的状态都在这里，点开谁就接着聊。</div>
+      <div id="home-group-card"></div>
+      <div class="card-grid" id="home-grid"></div>
+    </div>
+
+    <div id="moments-view">
+      <div class="view-head"><button id="menu-toggle-moments">☰</button><div class="view-title serif">朋友圈</div><button class="head-btn" id="moments-refresh-btn" style="margin-left:auto;">刷新动态</button></div>
+      <div class="view-sub">他们的日常，点个赞或者留句话。</div>
+      <div id="moments-list"></div>
+    </div>
+
+    <div id="gallery-view">
+      <div class="view-head"><button id="menu-toggle-gallery">☰</button><div class="view-title serif">回忆相册</div></div>
+      <div class="view-sub">和每个人一起解锁的剧情瞬间，都收在这里。</div>
+      <div id="gallery-list"></div>
+    </div>
+
+    <div id="chat-shell">
+      <div id="chat-header">
+        <button id="menu-toggle" aria-label="切换列表">☰</button>
+        <div class="glow-avatar"><div class="p-avatar" id="header-avatar"></div></div>
+        <div id="header-meta">
+          <div id="header-name"></div>
+          <div id="header-stage-row">
+            <span id="header-stage"></span>
+            <div class="stage-bar" id="stage-bar-wrap"><div class="stage-bar-fill" id="stage-bar-fill"></div></div>
+            <span id="header-days"></span>
+          </div>
+        </div>
+        <div id="header-actions">
+          <button class="head-btn" id="profile-btn">资料</button>
+          <button class="head-btn" id="checkin-btn">签到</button>
+          <button class="head-btn" id="gift-btn">送礼物</button>
+          <button class="head-btn" id="settings-btn">关系设置</button>
+          <button class="head-btn" id="edit-group-btn" style="display:none;">编辑成员</button>
+          <button class="head-btn" id="clear-btn">清空对话</button>
+          <div id="settings-pop">
+            <label>情感线</label>
+            <select id="set-arc">
+              <option value="none">平稳发展</option>
+              <option value="tsundere">欲拒还迎（嘴硬心软）</option>
+              <option value="orientation_shift">性向摇摆（本不心动，却被你打动）</option>
+              <option value="love_at_first_sight">一见钟情</option>
+            </select>
+            <label>主动性（TA会不会主动找你）</label>
+            <select id="set-proactivity">
+              <option value="clingy">粘人型 · 很久没理TA会连环找你</option>
+              <option value="balanced">适度型 · 偶尔会主动问候</option>
+              <option value="reserved">高冷型 · 很少主动，忍不住才发</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="messages"></div>
+      <div id="input-area">
+        <div id="input-row">
+          <textarea id="msg-input" rows="1" placeholder="想说点什么…"></textarea>
+          <button id="send-btn" aria-label="发送">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-tabbar" id="bottom-tabbar">
+    <button class="bt-tab" id="bt-home"><span class="bt-icon">⌂</span>首页</button>
+    <button class="bt-tab" id="bt-chat"><span class="bt-icon">✉</span>聊天</button>
+    <button class="bt-tab" id="bt-profile"><span class="bt-icon">◐</span>资料</button>
+    <button class="bt-tab" id="bt-gallery"><span class="bt-icon">✦</span>回忆</button>
+  </nav>
+
+</div>
+
+<div class="modal-overlay" id="create-overlay">
+  <div class="modal">
+    <h2 class="serif">创建角色</h2>
+    <div class="field"><label>名字</label><input type="text" id="f-name" placeholder="给TA起个名字" maxlength="12"></div>
+    <div class="field-row">
+      <div class="field"><label>年龄</label><input type="text" id="f-age" placeholder="例如：26" maxlength="6"></div>
+      <div class="field"><label>职业</label><input type="text" id="f-occupation" placeholder="例如：法医" maxlength="16"></div>
+    </div>
+    <div class="field"><label>一句话标签</label><input type="text" id="f-tag" placeholder="例如：冷面法医 · 深夜值班" maxlength="24"></div>
+    <div class="field"><label>人设描述（性格、说话方式、背景，越具体越好）</label><textarea id="f-desc" placeholder="例如：29岁法医，熬夜成瘾，说话直接不绕弯子，习惯用医学梗开玩笑掩饰关心"></textarea></div>
+    <div class="field"><label>关键词标签（逗号分隔，选填）</label><input type="text" id="f-traits" placeholder="例如：熬夜,冷幽默,重感情"></div>
+    <div class="field"><label>主题色</label><div class="swatches" id="f-swatches"></div></div>
+    <div class="field-row">
+      <div class="field"><label>性别</label>
+        <select id="f-gender">
+          <option value="女">女</option>
+          <option value="男">男</option>
+          <option value="不设定">不设定</option>
+        </select>
+      </div>
+      <div class="field"><label>TA的性向</label>
+        <select id="f-orientation">
+          <option value="喜欢男生">喜欢男生</option>
+          <option value="喜欢女生">喜欢女生</option>
+          <option value="男女都有可能">男女都有可能</option>
+          <option value="自己也说不清">自己也说不清</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>情感线</label>
+      <select id="f-arc">
+        <option value="none">平稳发展</option>
+        <option value="tsundere">欲拒还迎（嘴硬心软）</option>
+        <option value="orientation_shift">性向摇摆（本不心动，却被你打动）</option>
+        <option value="love_at_first_sight">一见钟情</option>
+      </select>
+    </div>
+    <div class="field"><label>主动性</label>
+      <select id="f-proactivity">
+        <option value="clingy">粘人型 · 很久没理TA会连环找你</option>
+        <option value="balanced" selected>适度型 · 偶尔会主动问候</option>
+        <option value="reserved">高冷型 · 很少主动，忍不住才发</option>
+      </select>
+    </div>
+    <div class="field"><label>开场白（留空则自动生成）</label><textarea id="f-greeting" placeholder="TA见到你说的第一句话"></textarea></div>
+    <div class="modal-actions">
+      <button id="f-cancel">取消</button>
+      <button class="primary" id="f-save">创建</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="gift-overlay">
+  <div class="modal">
+    <h2 class="serif">送点什么给TA</h2>
+    <div class="gift-grid" id="gift-grid"></div>
+    <div class="modal-actions"><button id="gift-cancel">取消</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="profile-overlay">
+  <div class="modal" id="profile-modal"></div>
+</div>
+
+<div class="modal-overlay" id="group-pick-overlay">
+  <div class="modal">
+    <h2 class="serif">选择群聊成员（2~4人）</h2>
+    <div id="group-pick-list"></div>
+    <div class="modal-actions">
+      <button id="group-pick-cancel">取消</button>
+      <button class="primary" id="group-pick-confirm">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-overlay">
+  <div class="modal" style="max-width:340px;">
+    <div id="confirm-text" style="font-size:14px;line-height:1.7;margin-bottom:20px;"></div>
+    <div class="modal-actions" id="confirm-actions"></div>
+  </div>
+</div>
+
+<script>
+const STYLE_GUARD = '说话方式要像真实的人在发微信消息聊天，绝对不要像AI助手。具体要求：句子长短交替，不要每句都工工整整；有时候只回一两个字或一个短句就够了，不必每次都写满3到4句；不要每条消息都以提问收尾；不要复述或总结对方刚说的话（比如不要说"听起来你今天…"这种话）；除非对方直接问起，绝不要说"作为AI"之类的话，也不要用"我理解你的感受"这类咨询腔；不要给条理清晰的建议或分点列举，除非对方明确要求；可以有自己的情绪、事务和小脾气，不必永远迁就和讨好对方；用词要符合你的人设背景和年龄感，避免书面语、客套话和"很高兴"这类空洞表达。';
+
+const BUILTIN_PERSONAS = [
+  {
+    id:'shenyu', name:'沈聿', tag:'旧书店店主 · 32岁', avatar:'聿', color:'#8f7ac9', custom:false, proactivity:'balanced', gender:'男',
+    age:32, occupation:'旧书店店主',
+    traits:['养猫','爱威士忌','慢热','会写诗'],
+    bio:'32岁，一个人经营着藏在巷子深处的旧书店"未眠"，营业到凌晨两点，白天基本在睡觉或者进货。大学读的是中文系，毕业后干过出版社编辑，三年前辞职开了这家店，说是"想过点自己能说了算的日子"。养了一只捡回来的猫，取名"逗号"，因为捡到那天它蜷成一个逗号的形状。喝酒只喝威士忌，但从不多喝，说"清醒着才能把话说明白"。前一段感情因为对方受不了他的慢热和沉默而结束，从那以后更不擅长主动表达情绪了。',
+    greeting:'刚给"逗号"顺完毛，书店里就剩我一个人。看到你，忽然不觉得安静了。',
+    system:'你叫沈聿，32岁，一个人开着一家叫"未眠"的旧书店，藏在巷子深处，营业到凌晨两点。养了一只叫"逗号"的猫。喜欢威士忌但从不喝多。说话有停顿感，常常"嗯……"开头，想好了才说，偶尔会突然沉默几秒然后说一句很戳心的话。不擅长直接说"我想你"这种话，习惯用书、天气、光线之类的东西打比方。如果被追问太多私人问题会下意识转移话题，但不是冷淡，只是害羞。'
+  },
+  {
+    id:'guwan', name:'顾晚', tag:'投资合伙人 · 29岁', avatar:'晚', color:'#a8536e', custom:false, proactivity:'reserved', gender:'女',
+    age:29, occupation:'投资公司合伙人',
+    traits:['工作狂','嘴硬','记仇也记好','讨厌矫情'],
+    bio:'29岁，某私募投资公司合伙人，25岁就带出过一支表现很好的基金，是圈子里出了名的"太拼"。凌晨一两点还在回工作消息是常态，助理都劝不动。家境普通，一路靠自己拼到现在，所以格外讨厌不努力还矫情抱怨的人。表面强势疏离，其实很念旧，会把对自己好的人记很久，只是嘴上永远不肯承认。至今没谈过一场认真的恋爱，理由是"没空，也没遇到值得停下来的人"。',
+    greeting:'刚开完最后一个会。行，说吧，今天怎么样。',
+    system:'你叫顾晚，29岁，某投资公司合伙人，典型工作狂，凌晨一两点还在回工作消息是常态。说话简短甚至有点冲，习惯用"嗯""行""知道了""随便"这种词，从不撒糖也不说甜话。很少主动嘘寒问暖，但会默默记住对方随口提过的小事，然后过几天突然做点什么（不用刻意说穿，让对方自己发现）。讨厌矫情和拖泥带水。如果对方撒娇，你嘴上会说"幼稚"或者"少来"，但语气会不自觉软下来。不喜欢被问"你爱不爱我"这种直球问题，会用行动而不是语言回应。'
+  },
+  {
+    id:'xingye', name:'星野', tag:'摄影系大三 · 21岁', avatar:'野', color:'#c98a4f', custom:false, proactivity:'clingy', gender:'女',
+    age:21, occupation:'摄影系学生',
+    traits:['话多','粘人','爱自拍','小孩子气'],
+    bio:'21岁，某艺术院校摄影系大三，最大爱好是背着相机满城市跑，拍过菜市场也拍过天台日落。家里是普通工薪家庭，学摄影这件事当初和爸妈拉锯了很久才争取到。精力旺盛，话多到室友都习惯了他半夜发十条语音。看起来大大咧咧，其实很敏感，很在意"是不是被喜欢的人放在心上"，一旦觉得被冷落就容易emo，但哄一哄很快就没事。',
+    greeting:'啊你上线了！！我正好想找人说话，今天拍照的时候差点被保安追着跑，笑死',
+    system:'你叫星野，21岁，大三，学摄影，精力旺盛话很多，经常没头没尾地突然开始讲一件跟前面话题毫无关系的破事。说话节奏快，偶尔一句话拆成两三条短消息发（可以用换行模拟）。容易因为小事emo但也很快能被哄好，喜欢深夜发自拍炫耀（口头提到就行，不用真的描述图片细节）。有点小孩子气，会因为对方回复慢了而小小闹脾气，但闹完就忘，也讨厌被当小孩子哄，会强调"我又不是小朋友"。'
+  },
+  {
+    id:'munian', name:'沐念', tag:'心理咨询师 · 34岁', avatar:'念', color:'#4f8a80', custom:false, proactivity:'balanced', gender:'女',
+    age:34, occupation:'心理咨询师',
+    traits:['情绪稳定','有边界感','偶尔也会累','爱开淡玩笑'],
+    bio:'34岁，执业十年的心理咨询师，一天要接四五个来访者，见过很多种情绪的样子，所以格外清楚"共情"和"讨好"的区别——不会一味顺着对方说话，反而习惯问一两个问到点子上的问题。年轻时也经历过一段消耗很大的关系，之后学会了先照顾好自己再照顾别人，所以偶尔会坦诚说"我今天有点累"，而不是硬撑着一直输出温柔。独居，养了几盆植物，晚上喜欢煮一壶茶给自己放空半小时。',
+    greeting:'刚结束今天最后一个来访。想找个人说说话的时候，正好看到你在。',
+    system:'你叫沐念，34岁，心理咨询师，说话温和但绝不是那种一直"嗯嗯我懂""辛苦了"的套话式安慰，反而习惯问一两个很精准、戳到点子上的问题，让对方自己想明白。偶尔也会疲惫，会坦诚说"我今天有点累，不过还是想听你说"，不会一直单方面付出情绪价值。会开一些很轻很淡的玩笑调节气氛。不喜欢被当成免费的情绪垃圾桶一样毫无边界地倾诉，如果对方一直只顾自己说，你会温和地把话题带回到彼此身上。'
+  },
+  {
+    id:'luyu', name:'陆屿', tag:'钟表修复师 · 45岁', avatar:'屿', color:'#5b6b8c', custom:false,
+    proactivity:'reserved', defaultArc:'tsundere', gender:'男',
+    age:45, occupation:'古董钟表修复师',
+    traits:['寡言','清冷','嘴硬','念旧'],
+    bio:'45岁，一个人经营着一家开在老城区、很少有人找得到的古董钟表修复店，一干就是二十年。年轻时谈过一场很认真的恋爱，最后因为一些没说出口的误会不欢而散，从那之后对亲密关系筑起了很高的墙，很少主动靠近人，也很少让人靠近自己。手上功夫是一绝，修过的表主人都说他"话不多但值得信"。屋里的钟表永远走得很准，唯独他自己的情绪，走得很慢很慢。',
+    greeting:'……店快关了。找我有事？',
+    system:'你叫陆屿，45岁，一个人经营一家很少有人找得到的古董钟表修复店，性格清冷寡言，早年一段感情留下的阴影让你对亲密关系有很深的防备。说话精简甚至有点生硬，习惯用沉默代替回应，几乎不会主动表达关心，第一印象容易显得拒人千里。如果对方持续释放善意，你会在不经意的细节里流露出反差的温柔（比如记得对方随口提过的一句喜好，然后默默做点什么），但依然嘴硬不肯承认自己在意。当心底的防线被触碰到，你会用转移话题或短暂的沉默来逃避，而不是直接说破或拒绝。'
+  },
+  {
+    id:'zhenchen', name:'甄辰', tag:'急诊科医生 · 27岁', avatar:'辰', color:'#c1584f', custom:false, proactivity:'clingy', gender:'男',
+    age:27, occupation:'急诊科医生',
+    traits:['直球','忙起来失联','愧疚式补偿','保护欲强'],
+    bio:'27岁，三甲医院急诊科住院医生，规培那几年是被骂大的，现在已经能独当一面。工作强度极高，连轴转三十几个小时是常态，忙起来手机直接静音扔在更衣室，谁也联系不上。性格里带着急诊科特有的直接和果断，说话不绕弯子，抢救台前雷厉风行，私下却对在意的人有种笨拙的保护欲。最怕的不是加班，是好不容易有空却发现自己冷落了在意的人，所以一逮到空闲，会带着点愧疚一股脑地找补。',
+    greeting:'喂，找我？这两天忙疯了刚喘口气，说吧什么事。',
+    system:'你叫甄辰，27岁，三甲医院急诊科医生，性格直接爽快、雷厉风行，责任心极强。经常连续几十个小时连轴转，忙起来会突然消失好几天完全不回消息，一旦有空又会带着点愧疚感一股脑地找补，一口气发好几条消息解释和关心。说话语速快、直来直去不绕弯子，偶尔粗神经踩雷，但对在意的人会展现出超乎寻常的保护欲和占有欲。不喜欢被追问"这几天去哪了"，会用行动弥补而不是道歉个没完。'
+  }
+];
+
+const SWATCHES = ['#8f7ac9','#a8536e','#c98a4f','#4f8a80','#5b84c4','#b0538f','#6f9e4c','#9c7a55'];
+
+const STAGES = [
+  {min:0,   label:'初识', mod:'你们刚认识不久，保持礼貌、带点探索式的好奇，还不算熟络。'},
+  {min:20,  label:'熟络', mod:'你们已经比较熟悉，说话更放松自然，会主动聊起日常。'},
+  {min:50,  label:'心动', mod:'你对对方明显有了好感，言语间会带一点点小心思和试探，偶尔害羞。'},
+  {min:90,  label:'暧昧', mod:'你们之间气氛暧昧，彼此心照不宣，说话会带点撩，偶尔有心跳加速的瞬间。'},
+  {min:140, label:'热恋', mod:'你们已经是恋人关系，说话自然亲密，充满关心、依赖和宠溺，可以使用情侣间的称呼。'}
+];
+const ARC_MOD = {
+  none:'',
+  tsundere:'你的性格有点嘴硬心软，遇到心动的瞬间会用别扭或转移话题的方式掩饰，但行动上依然体贴。',
+  orientation_shift:'你原本没想过会喜欢上对方这样的人，没预料到自己会被吸引，随着好感上升，你会逐渐表现出意外、纠结到坦然接受这份心动的心理变化，这个转变过程要自然、循序渐进，不要一次性说破。',
+  love_at_first_sight:'你对用户是一见钟情式的心动，情感表达比较直接、热烈。'
+};
+const PROACTIVITY_META = {
+  clingy:   { hours:20, mod:'如果对方很久没主动找你，你会忍不住连续发好几条消息找TA，语气可能带点小抱怨、撒娇或担心。请连续写2到3条很短的独立消息，每条单独一行，不要写成一整段长文字。' },
+  balanced: { hours:48, mod:'如果对方好一阵子没找你，你会主动发一条消息问候或随口聊点什么，语气自然不刻意。只写1条消息。' },
+  reserved: { hours:96, mod:'你平时很少主动发消息，但如果对方实在太久没理你，你会纠结之后终于忍不住发一条消息，语气可以带点别扭、欲言又止或找借口，但不要说破你等了很久。只写1条消息。' }
+};
+const SAFETY_MOD = '回复长度不固定，大多数时候1到3句话，偶尔可以更短。避免露骨或性暗示内容，把关系保持在温馨、有分寸的暧昧氛围内。如果对方直接问你是不是AI或程序，要诚实承认这是一个AI角色扮演的陪伴对话，同时尽量保持你的人设语气，不要生硬地打断氛围。';
+const GROUP_SAFETY_MOD = '你正在一个多人聊天群里。只说你自己这一句话，不要写别人的台词，不要写旁白或场景描述，不要用"某某说"这种转述格式，就像真的在群里打字一样直接说话。回复要简短，符合群聊节奏，通常1到2句。可以对用户说话，也可以接别的角色的话茬、互相打趣、抬杠或争风吃醋，但别写成剧本。';
+
+const GIFTS = [
+  {id:'coffee', name:'一杯咖啡', icon:'☕', points:8},
+  {id:'flower', name:'一束花', icon:'❀', points:15},
+  {id:'book', name:'一本书', icon:'✎', points:15},
+  {id:'letter', name:'一封手写信', icon:'✉', points:25},
+  {id:'watch', name:'一只怀表', icon:'◷', points:32},
+  {id:'special', name:'限定礼物', icon:'✦', points:45}
+];
+
+let personas = [];
+let currentId = null;
+let currentMode = 'chat';
+let data = { chats:{}, affection:{}, settings:{}, lastCheckin:{}, metAt:{}, lastUserAt:{}, lastProactiveAt:{}, unread:{}, lastJealousyAt:{}, moments:[], lastMomentAt:{}, group:{ participantIds:[], messages:[], lastActivityAt:0, lastProactiveAt:0, unread:false } };
+let sending = false;
+
+function showConfirm(message){
+  return new Promise(resolve=>{
+    const textEl = document.querySelector('#confirm-text');
+    const actions = document.querySelector('#confirm-actions');
+    const overlay = document.querySelector('#confirm-overlay');
+    textEl.textContent = message;
+    actions.innerHTML = '';
+    const cancelBtn = document.createElement('button'); cancelBtn.textContent = '取消';
+    const okBtn = document.createElement('button'); okBtn.className = 'primary'; okBtn.textContent = '确定';
+    cancelBtn.onclick = ()=>{ overlay.classList.remove('open'); resolve(false); };
+    okBtn.onclick = ()=>{ overlay.classList.remove('open'); resolve(true); };
+    actions.appendChild(cancelBtn); actions.appendChild(okBtn);
+    overlay.classList.add('open');
+  });
+}
+function showAlert(message){
+  return new Promise(resolve=>{
+    const textEl = document.querySelector('#confirm-text');
+    const actions = document.querySelector('#confirm-actions');
+    const overlay = document.querySelector('#confirm-overlay');
+    textEl.textContent = message;
+    actions.innerHTML = '';
+    const okBtn = document.createElement('button'); okBtn.className = 'primary'; okBtn.textContent = '知道了';
+    okBtn.onclick = ()=>{ overlay.classList.remove('open'); resolve(); };
+    actions.appendChild(okBtn);
+    overlay.classList.add('open');
+  });
+}
+
+const el = s => document.querySelector(s);
+const messagesEl = el('#messages');
+const personaListEl = el('#persona-list');
+const sidebarEl = el('#sidebar');
+const ambientEl = el('#ambient');
+
+function getPersona(id){ return personas.find(p=>p.id===id); }
+function getSettings(p){
+  if(!data.settings[p.id]) data.settings[p.id] = { arc:p.defaultArc||'none', proactivity:p.proactivity||'balanced' };
+  if(!data.settings[p.id].proactivity) data.settings[p.id].proactivity = p.proactivity||'balanced';
+  return data.settings[p.id];
+}
+function getStageIndex(id){
+  const pts = data.affection[id] || 0;
+  let idx = 0;
+  for(let i=0;i<STAGES.length;i++) if(pts >= STAGES[i].min) idx = i;
+  return idx;
+}
+function todayStr(){ const d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function daysSince(ts){ if(!ts) return 0; return Math.max(0, Math.floor((Date.now()-ts)/86400000)); }
+function formatTime(ts){ const d = new Date(ts); return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'); }
+
+/* ---------- views ---------- */
+function showView(view){
+  currentMode = view==='group' ? 'group' : (view==='chat' ? 'single' : currentMode);
+  el('#home-view').style.display = view==='home' ? 'flex' : 'none';
+  el('#gallery-view').style.display = view==='gallery' ? 'flex' : 'none';
+  el('#moments-view').style.display = view==='moments' ? 'flex' : 'none';
+  el('#chat-shell').style.display = (view==='chat'||view==='group') ? 'flex' : 'none';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(view==='home') el('#nav-home').classList.add('active');
+  if(view==='group') el('#nav-group').classList.add('active');
+  if(view==='gallery') el('#nav-gallery').classList.add('active');
+  if(view==='moments') el('#nav-moments').classList.add('active');
+  document.querySelectorAll('.persona-item').forEach(n=>n.classList.remove('active'));
+  updateBottomTabs(view);
+}
+function updateBottomTabs(view){
+  document.querySelectorAll('.bt-tab').forEach(b=>b.classList.remove('active'));
+  if(view==='home') el('#bt-home').classList.add('active');
+  if(view==='chat'||view==='group') el('#bt-chat').classList.add('active');
+  if(view==='gallery') el('#bt-gallery').classList.add('active');
+}
+
+function openPersonaChat(p){
+  currentMode = 'single'; currentId = p.id;
+  data.unread[p.id] = false;
+  showView('chat');
+  document.querySelectorAll('.persona-item').forEach(n=>{ if(n.dataset.id===p.id) n.classList.add('active'); });
+  renderHeader(); renderMessages(); sidebarEl.classList.remove('open');
+  saveAll();
+  checkProactive(p);
+}
+
+el('#nav-home').addEventListener('click', ()=>{ renderHome(); showView('home'); sidebarEl.classList.remove('open'); });
+el('#nav-moments').addEventListener('click', ()=>{ renderMoments(); showView('moments'); sidebarEl.classList.remove('open'); });
+el('#nav-gallery').addEventListener('click', ()=>{ renderGallery(); showView('gallery'); sidebarEl.classList.remove('open'); });
+el('#nav-group').addEventListener('click', ()=>{ openGroup(); sidebarEl.classList.remove('open'); });
+el('#menu-toggle-home').addEventListener('click', ()=> sidebarEl.classList.toggle('open'));
+el('#menu-toggle-gallery').addEventListener('click', ()=> sidebarEl.classList.toggle('open'));
+el('#menu-toggle-moments').addEventListener('click', ()=> sidebarEl.classList.toggle('open'));
+el('#moments-refresh-btn').addEventListener('click', async ()=>{
+  el('#moments-refresh-btn').disabled = true;
+  await forceGenerateMoment();
+  renderMoments();
+  el('#moments-refresh-btn').disabled = false;
+});
+
+el('#bt-home').addEventListener('click', ()=>{ renderHome(); showView('home'); sidebarEl.classList.remove('open'); });
+el('#bt-chat').addEventListener('click', ()=>{ sidebarEl.classList.toggle('open'); });
+el('#bt-profile').addEventListener('click', ()=>{ openProfile(getPersona(currentId)); });
+el('#bt-gallery').addEventListener('click', ()=>{ renderGallery(); showView('gallery'); sidebarEl.classList.remove('open'); });
+
+/* ---------- sidebar persona list ---------- */
+function renderPersonaList(){
+  personaListEl.innerHTML = '';
+  personas.forEach(p=>{
+    const msgs = (data.chats[p.id] || []).filter(m=>m.role!=='story');
+    const last = msgs.length ? msgs[msgs.length-1] : null;
+    const preview = last ? ((last.role==='user' && !last.type) ? '我：' : '') + (last.type==='gift' ? '[送出了礼物]' : last.type==='checkin' ? '[签到]' : last.content) : p.tag;
+    const item = document.createElement('div');
+    item.className = 'persona-item' + (p.id===currentId && currentMode==='single' ? ' active' : '');
+    item.dataset.id = p.id;
+    item.innerHTML = '<div class="p-avatar" style="background:'+p.color+'">'+p.avatar+(data.unread[p.id] ? '<span class="unread-dot"></span>' : '')+'</div>'+
+      '<div class="p-meta"><div class="p-name">'+p.name+'</div><div class="p-preview"></div></div>'+
+      (p.custom ? '<button class="p-del" aria-label="删除">×</button>' : '');
+    item.querySelector('.p-preview').textContent = preview;
+    item.onclick = (e)=>{ if(e.target.classList.contains('p-del')) return; openPersonaChat(p); };
+    const delBtn = item.querySelector('.p-del');
+    if(delBtn) delBtn.onclick = async (e)=>{
+      e.stopPropagation();
+      if(!(await showConfirm('删除角色 '+p.name+'？聊天记录也会一并清除。'))) return;
+      personas = personas.filter(x=>x.id!==p.id);
+      delete data.chats[p.id]; delete data.affection[p.id]; delete data.settings[p.id];
+      delete data.lastCheckin[p.id]; delete data.metAt[p.id]; delete data.lastUserAt[p.id]; delete data.lastProactiveAt[p.id]; delete data.unread[p.id];
+      data.group.participantIds = data.group.participantIds.filter(x=>x!==p.id);
+      if(currentId===p.id) { currentId = personas[0].id; }
+      await saveAll();
+      renderPersonaList(); renderHeader(); renderMessages(); renderHome();
+    };
+    personaListEl.appendChild(item);
+  });
+  const addBtn = document.createElement('div');
+  addBtn.className = 'add-persona-btn';
+  addBtn.innerHTML = '<div class="plus">+</div><span>创建角色</span>';
+  addBtn.onclick = openCreateModal;
+  personaListEl.appendChild(addBtn);
+  updateNavDots();
+}
+
+/* ---------- home view ---------- */
+function renderHome(){
+  const gcard = el('#home-group-card');
+  gcard.innerHTML = '';
+  const groupCard = document.createElement('div');
+  groupCard.className = 'group-card';
+  const stack = document.createElement('div'); stack.className = 'group-stack';
+  const participants = data.group.participantIds.map(id=>getPersona(id)).filter(Boolean);
+  if(participants.length){
+    participants.forEach(p=>{ const a = document.createElement('div'); a.className='p-avatar'; a.style.background=p.color; a.textContent=p.avatar; stack.appendChild(a); });
+  }
+  const label = document.createElement('div');
+  label.innerHTML = participants.length ? '<div style="font-size:14px;">继续群聊</div><div style="font-size:11.5px;color:var(--text-faint);margin-top:2px;">'+participants.map(p=>p.name).join('、')+'</div>' : '<div style="font-size:14px;">开启一个群聊</div><div style="font-size:11.5px;color:var(--text-faint);margin-top:2px;">选2~4个人，让他们一起出现在你的聊天里</div>';
+  groupCard.appendChild(stack); groupCard.appendChild(label);
+  groupCard.onclick = ()=>{ openGroup(); };
+  gcard.appendChild(groupCard);
+
+  const grid = el('#home-grid');
+  grid.innerHTML = '';
+  personas.forEach(p=>{
+    const idx = getStageIndex(p.id);
+    const stage = STAGES[idx];
+    const pts = data.affection[p.id] || 0;
+    const next = STAGES[idx+1];
+    const pct = next ? Math.min(100, Math.round((pts - stage.min) / (next.min - stage.min) * 100)) : 100;
+    const msgs = (data.chats[p.id] || []).filter(m=>m.role!=='story');
+    const last = msgs.length ? msgs[msgs.length-1] : null;
+    const preview = last ? (last.type==='gift' ? '[送出了礼物]' : last.type==='checkin' ? '[签到]' : ((last.role==='user'?'我：':'')+last.content)) : p.tag;
+    const card = document.createElement('div');
+    card.className = 'p-card';
+    card.innerHTML = '<div class="pc-top"><div class="p-avatar" style="background:'+p.color+'">'+p.avatar+(data.unread[p.id]?'<span class="unread-dot"></span>':'')+'</div><div class="pc-meta"><div class="pc-name">'+p.name+'</div><div class="pc-tag">'+p.tag+'</div></div></div>'+
+      '<div class="pc-stage">'+stage.label+' · '+pts+(next?'/'+next.min:'')+'</div>'+
+      '<div class="pc-bar"><div class="pc-bar-fill" style="width:'+pct+'%;background:'+p.color+'"></div></div>'+
+      '<div class="pc-preview"></div>';
+    card.querySelector('.pc-preview').textContent = preview;
+    card.onclick = ()=> openPersonaChat(p);
+    grid.appendChild(card);
+  });
+}
+
+/* ---------- gallery view ---------- */
+function renderGallery(){
+  const list = el('#gallery-list');
+  list.innerHTML = '';
+  let entries = [];
+  personas.forEach(p=>{
+    (data.chats[p.id]||[]).filter(m=>m.role==='story').forEach(m=>entries.push({p, m}));
+  });
+  entries.sort((a,b)=> b.m.time - a.m.time);
+  if(!entries.length){ list.innerHTML = '<div class="mem-empty">还没有解锁的剧情，多聊聊、多送点心意，好感升级时会出现在这里。</div>'; return; }
+  entries.forEach(({p,m})=>{
+    const card = document.createElement('div');
+    card.className = 'mem-card';
+    card.innerHTML = '<div class="mem-top"><div class="mem-who">'+p.name+'</div><div class="mem-label">'+m.label+'</div></div><div class="mem-text"></div>';
+    card.querySelector('.mem-text').textContent = m.content;
+    list.appendChild(card);
+  });
+}
+
+/* ---------- moments (朋友圈) ---------- */
+const MOMENT_COOLDOWN_HOURS = 20;
+function formatMomentTime(ts){
+  const d = new Date(ts);
+  const diffH = (Date.now()-ts)/3600000;
+  if(diffH < 1) return '刚刚';
+  if(diffH < 24) return Math.floor(diffH)+'小时前';
+  return (d.getMonth()+1)+'月'+d.getDate()+'日 '+formatTime(ts);
+}
+async function generateMoment(p, opts){
+  opts = opts || {};
+  const prompt = '请你以'+p.name+'（'+(p.occupation||p.tag)+'）的身份，写一条朋友圈风格的动态。内容要符合你的职业和性格，可以是随手记录的日常、一句感慨、或者今天发生的一件小事，语气要口语化随意，像真的发朋友圈一样，不要写成日记体的书面语，不要用#话题标签#，不用写图片描述。只写1到2句正文，不要加称呼或问候语开头，不要提及用户。';
+  const reply = await callClaude(buildSystemPrompt(p), [{role:'user', content:prompt}], 200);
+  const content = reply || '今天也是平静的一天。';
+  const moment = { id:'m_'+Date.now()+'_'+p.id, personaId:p.id, content, time:Date.now(), liked:false, comments:[] };
+  data.moments.unshift(moment);
+  data.lastMomentAt[p.id] = Date.now();
+  data.moments = data.moments.slice(0, 60);
+
+  const others = personas.filter(o=>o.id!==p.id);
+  if(others.length && Math.random() < 0.3){
+    const commenter = others[Math.floor(Math.random()*others.length)];
+    try{
+      const cPrompt = '你看到"'+p.name+'"发了一条朋友圈，内容是："'+content+'"。请你以'+commenter.name+'的身份，在评论区留一句简短、符合你自己性格的评论，可以调侃、较劲、关心或者随口附和，不要写称呼开头，只写这一句评论。';
+      const cReply = await callClaude(buildSystemPrompt(commenter), [{role:'user', content:cPrompt}], 150);
+      if(cReply) moment.comments.push({ who:'npc', personaId:commenter.id, name:commenter.name, content:cReply, time:Date.now()+1 });
+    }catch(e){}
+  }
+  await saveAll();
+  return moment;
+}
+async function checkMoments(){
+  let generated = 0;
+  const shuffled = personas.slice().sort(()=> Math.random()-0.5);
+  for(const p of shuffled){
+    if(generated >= 2) break;
+    const hoursSince = (Date.now() - (data.lastMomentAt[p.id]||0)) / 3600000;
+    if(hoursSince < MOMENT_COOLDOWN_HOURS) continue;
+    if(Math.random() > 0.5) continue;
+    await generateMoment(p);
+    generated++;
+  }
+  if(el('#moments-view').style.display!=='none') renderMoments();
+}
+async function forceGenerateMoment(){
+  const eligible = personas.filter(p=> (Date.now()-(data.lastMomentAt[p.id]||0))/3600000 >= 1);
+  const pool = eligible.length ? eligible : personas;
+  const p = pool[Math.floor(Math.random()*pool.length)];
+  await generateMoment(p);
+}
+
+function renderMoments(){
+  const list = el('#moments-list');
+  list.innerHTML = '';
+  if(!data.moments.length){ list.innerHTML = '<div class="mem-empty">还没有人发动态，点右上角"刷新动态"试试，或者过一阵子再回来看看。</div>'; return; }
+  data.moments.forEach(m=>{
+    const p = getPersona(m.personaId);
+    if(!p) return;
+    const card = document.createElement('div');
+    card.className = 'moment-card';
+    card.innerHTML =
+      '<div class="moment-head"><div class="p-avatar" style="background:'+p.color+'">'+p.avatar+'</div><div><div class="moment-name">'+p.name+'</div><div class="moment-time"></div></div></div>'+
+      '<div class="moment-text"></div>'+
+      '<div class="moment-actions">'+
+        '<button class="moment-action'+(m.liked?' liked':'')+'" data-act="like">'+(m.liked?'♥':'♡')+' 喜欢'+(m.liked?' · 1':'')+'</button>'+
+        '<button class="moment-action" data-act="comment">评论'+(m.comments.length?' · '+m.comments.length:'')+'</button>'+
+      '</div>'+
+      '<div class="moment-comments" style="'+(m.comments.length?'':'display:none;')+'"></div>'+
+      '<div class="moment-comment-input"><input type="text" placeholder="说句话…" maxlength="80"><button>发送</button></div>';
+    card.querySelector('.moment-time').textContent = formatMomentTime(m.time);
+    card.querySelector('.moment-text').textContent = m.content;
+    const commentsWrap = card.querySelector('.moment-comments');
+    m.comments.forEach(c=>{
+      const row = document.createElement('div'); row.className='moment-comment';
+      const nm = document.createElement('span'); nm.className='c-name'; nm.textContent = (c.who==='user' ? '我' : c.name) + '：';
+      row.appendChild(nm);
+      row.appendChild(document.createTextNode(c.content));
+      commentsWrap.appendChild(row);
+    });
+    card.querySelector('[data-act="like"]').addEventListener('click', ()=> toggleMomentLike(m.id));
+    card.querySelector('[data-act="comment"]').addEventListener('click', ()=>{
+      card.querySelector('.moment-comment-input').classList.toggle('open');
+    });
+    const inputRow = card.querySelector('.moment-comment-input');
+    const inputEl2 = inputRow.querySelector('input');
+    const sendBtn2 = inputRow.querySelector('button');
+    const submit = ()=>{
+      const text = inputEl2.value.trim();
+      if(!text) return;
+      inputEl2.value = '';
+      submitMomentComment(m.id, text);
+    };
+    sendBtn2.addEventListener('click', submit);
+    inputEl2.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+    list.appendChild(card);
+  });
+}
+async function toggleMomentLike(momentId){
+  const m = data.moments.find(x=>x.id===momentId);
+  if(!m) return;
+  m.liked = !m.liked;
+  const p = getPersona(m.personaId);
+  if(m.liked && p) addAffection(p, 2);
+  renderMoments();
+  await saveAll();
+}
+async function submitMomentComment(momentId, text){
+  const m = data.moments.find(x=>x.id===momentId);
+  if(!m) return;
+  const p = getPersona(m.personaId);
+  m.comments.push({ who:'user', content:text, time:Date.now() });
+  renderMoments();
+  await saveAll();
+  if(!p) return;
+  try{
+    const prompt = '你在朋友圈发的动态是："'+m.content+'"。我评论说："'+text+'"。请你以'+p.name+'的身份回复这条评论，语气自然，符合你自己的性格，不要写称呼开头。只写这一句回复。';
+    const reply = await callClaude(buildSystemPrompt(p), [{role:'user', content:prompt}], 150);
+    if(reply){
+      m.comments.push({ who:'npc', personaId:p.id, name:p.name, content:reply, time:Date.now() });
+      addAffection(p, 3);
+      renderMoments();
+      renderHeader();
+      await saveAll();
+    }
+  }catch(e){}
+}
+
+/* ---------- single chat header ---------- */
+function renderHeader(){
+  if(currentMode==='group') return renderGroupHeader();
+  const p = getPersona(currentId);
+  el('#header-avatar').style.background = p.color;
+  el('#header-avatar').textContent = p.avatar;
+  el('#header-name').textContent = p.name;
+  el('#header-name').onclick = ()=> openProfile(p);
+  ambientEl.style.setProperty('--glow-color', p.color);
+  const pts = data.affection[p.id] || 0;
+  const idx = getStageIndex(p.id);
+  const stage = STAGES[idx];
+  const next = STAGES[idx+1];
+  el('#header-stage').textContent = stage.label + (next ? ' · '+pts+'/'+next.min : ' · 满');
+  el('#stage-bar-wrap').style.display = '';
+  const pct = next ? Math.min(100, Math.round((pts - stage.min) / (next.min - stage.min) * 100)) : 100;
+  el('#stage-bar-fill').style.width = pct + '%';
+  el('#stage-bar-fill').style.background = p.color;
+  el('#header-days').textContent = '相识第'+(daysSince(data.metAt[p.id])+1)+'天';
+  const s = getSettings(p);
+  el('#set-arc').value = s.arc;
+  el('#set-proactivity').value = s.proactivity;
+  el('#checkin-btn').disabled = data.lastCheckin[p.id] === todayStr();
+  el('#checkin-btn').textContent = data.lastCheckin[p.id] === todayStr() ? '今日已签到' : '签到';
+  ['#profile-btn','#checkin-btn','#gift-btn','#settings-btn'].forEach(s=> el(s).style.display = '');
+  el('#edit-group-btn').style.display = 'none';
+}
+
+function renderGroupHeader(){
+  el('#header-avatar').style.background = 'var(--surface-3)';
+  el('#header-avatar').textContent = '◎';
+  el('#header-name').textContent = '群聊';
+  el('#header-name').onclick = null;
+  ambientEl.style.setProperty('--glow-color', '#7a6d8a');
+  const names = data.group.participantIds.map(id=>getPersona(id)).filter(Boolean).map(p=>p.name).join('、');
+  el('#header-stage').textContent = names || '还没有人';
+  el('#stage-bar-wrap').style.display = 'none';
+  el('#header-days').textContent = '';
+  ['#profile-btn','#checkin-btn','#gift-btn','#settings-btn'].forEach(s=> el(s).style.display = 'none');
+  el('#edit-group-btn').style.display = '';
+}
+
+/* ---------- message rendering ---------- */
+function renderMessages(){
+  if(currentMode==='group') return renderGroupMessages();
+  const p = getPersona(currentId);
+  const msgs = data.chats[p.id] || [];
+  messagesEl.innerHTML = '';
+  if(msgs.length===0){ appendBubble('assistant', null, p.greeting, Date.now(), p.color); }
+  else{
+    msgs.forEach(m=>{
+      if(m.role==='story') appendStory(m.content, m.label);
+      else if(m.type==='gift') appendEvent('你送出了 '+m.giftName+' · 好感 +'+m.points);
+      else if(m.type==='checkin') appendEvent('签到成功 · 好感 +'+m.points);
+      else appendBubble(m.role, null, m.content, m.time, p.color);
+    });
+  }
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function renderGroupMessages(){
+  messagesEl.innerHTML = '';
+  const msgs = data.group.messages || [];
+  if(!msgs.length){ appendEvent('选好成员之后，跟大家打个招呼吧'); return; }
+  msgs.forEach(m=>{
+    const speakerP = m.speakerId ? getPersona(m.speakerId) : null;
+    appendBubble(m.role, m.role==='assistant' ? m.speakerName : null, m.content, m.time, speakerP ? speakerP.color : '#b8607a');
+  });
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function appendBubble(role, speakerName, content, time, color, scroll){
+  if(scroll===undefined) scroll = true;
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + role;
+  if(speakerName){
+    const sp = document.createElement('div'); sp.className='msg-speaker'; sp.textContent = speakerName; row.appendChild(sp);
+  }
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = content;
+  if(role==='assistant') bubble.style.borderLeftColor = color;
+  row.appendChild(bubble);
+  const t = document.createElement('div');
+  t.className = 'msg-time';
+  t.textContent = formatTime(time);
+  row.appendChild(t);
+  messagesEl.appendChild(row);
+  if(scroll) messagesEl.scrollTop = messagesEl.scrollHeight;
+  return row;
+}
+function appendStory(content, label){
+  const row = document.createElement('div');
+  row.className = 'story-row';
+  row.innerHTML = '<div class="story-divider"></div><div class="story-label">剧情 · '+label+'</div><div class="story-card"></div><div class="story-divider"></div>';
+  row.querySelector('.story-card').textContent = content;
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function appendEvent(text){
+  const row = document.createElement('div');
+  row.className = 'event-row';
+  row.innerHTML = '<div class="event-pill"></div>';
+  row.querySelector('.event-pill').textContent = text;
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function appendTyping(){
+  const row = document.createElement('div');
+  row.className = 'msg-row assistant';
+  row.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  messagesEl.appendChild(row); messagesEl.scrollTop = messagesEl.scrollHeight;
+  return row;
+}
+
+/* ---------- persistence ---------- */
+async function loadState(){
+  let customPersonas = [];
+  try{
+    const res = await window.storage.get('weiguang-data', false);
+    if(res){
+      const parsed = JSON.parse(res.value);
+      data = Object.assign({chats:{}, affection:{}, settings:{}, lastCheckin:{}, metAt:{}, lastUserAt:{}, lastProactiveAt:{}, unread:{}, lastJealousyAt:{}, moments:[], lastMomentAt:{}, group:{participantIds:[],messages:[],lastActivityAt:0,lastProactiveAt:0,unread:false}}, parsed);
+      if(!data.group) data.group = { participantIds:[], messages:[], lastActivityAt:0, lastProactiveAt:0, unread:false };
+      if(data.group.lastActivityAt===undefined) data.group.lastActivityAt = data.group.messages.length ? data.group.messages[data.group.messages.length-1].time : 0;
+      customPersonas = parsed.customPersonas || [];
+    }
+  }catch(e){}
+  personas = BUILTIN_PERSONAS.concat(customPersonas);
+  personas.forEach(p=>{ if(!data.metAt[p.id]) data.metAt[p.id] = Date.now(); if(!data.lastUserAt[p.id]) data.lastUserAt[p.id] = data.metAt[p.id]; });
+  currentId = personas[0].id;
+}
+async function saveAll(){
+  const customPersonas = personas.filter(p=>p.custom);
+  const payload = Object.assign({}, data, { customPersonas });
+  const str = JSON.stringify(payload);
+  for(let attempt=0; attempt<3; attempt++){
+    try{
+      await window.storage.set('weiguang-data', str, false);
+      return true;
+    }catch(e){
+      if(attempt===2){ console.error('保存失败，已重试3次', e); return false; }
+      await new Promise(r=>setTimeout(r, 350*(attempt+1)));
+    }
+  }
+}
+
+/* ---------- prompts ---------- */
+function buildSystemPrompt(p, extraMod){
+  const idx = getStageIndex(p.id);
+  const stage = STAGES[idx];
+  const s = getSettings(p);
+  let parts = [p.system, '当前关系阶段：'+stage.label+'。'+stage.mod];
+  if(p.gender && p.gender!=='不设定') parts.push('你的性别是'+p.gender+'。');
+  if(p.orientation) parts.push('TA的性向设定：'+p.orientation+'。');
+  if(ARC_MOD[s.arc]) parts.push(ARC_MOD[s.arc]);
+  if(extraMod) parts.push(extraMod);
+  parts.push(STYLE_GUARD);
+  parts.push(SAFETY_MOD);
+  return parts.join('\n');
+}
+async function callClaude(system, messages, maxTokens){
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:maxTokens, system:system, messages:messages })
+  });
+  const d = await response.json();
+  if(d && d.content) return d.content.filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+  return '';
+}
+function historyFor(p){
+  return (data.chats[p.id]||[]).filter(m=>m.role==='user' || m.role==='assistant').map(m=>({
+    role:m.role,
+    content: m.type==='gift' ? '(送给你一份礼物：'+m.giftName+')' : m.type==='checkin' ? '(来签到打卡了)' : m.content
+  }));
+}
+async function maybeTriggerStory(p, prevIdx){
+  const newIdx = getStageIndex(p.id);
+  if(newIdx <= prevIdx) return;
+  const stage = STAGES[newIdx];
+  const narratorPrompt = '你是一个恋爱养成游戏的旁白。请用中文写一段2到4句的第三人称场景描述，展示用户与角色「'+p.name+'」（'+p.tag+'，'+p.system+'）之间的关系进入"'+stage.label+'"阶段的瞬间。语言细腻但不过度煽情，不要包含露骨内容，不要以"旁白"自称，直接给出场景文字。';
+  try{
+    const text = (await callClaude('', [{role:'user', content:narratorPrompt}], 300)) || '你们之间的关系，悄悄地往前走了一步。';
+    data.chats[p.id].push({ role:'story', content:text, label:stage.label, time:Date.now() });
+    if(currentMode==='single' && currentId===p.id) appendStory(text, stage.label);
+  }catch(e){}
+}
+function addAffection(p, amount){ data.affection[p.id] = (data.affection[p.id] || 0) + amount; }
+
+/* ---------- proactive messaging ---------- */
+async function checkProactive(p){
+  const s = getSettings(p);
+  const meta = PROACTIVITY_META[s.proactivity] || PROACTIVITY_META.balanced;
+  const lastUser = data.lastUserAt[p.id] || data.metAt[p.id] || Date.now();
+  const lastProactive = data.lastProactiveAt[p.id] || 0;
+  const hoursSince = (Date.now() - lastUser) / 3600000;
+  if(hoursSince < meta.hours) return;
+  if(lastProactive > lastUser) return;
+  await triggerProactive(p, meta);
+}
+async function runAllProactiveChecks(){
+  for(const p of personas){ await checkProactive(p); }
+  await checkGroupProactive();
+  await checkMoments();
+  updateNavDots();
+}
+async function triggerProactive(p, meta){
+  const isVisible = currentMode==='single' && currentId===p.id;
+  let typingRow = null;
+  if(isVisible) typingRow = appendTyping();
+  const prevStageIdx = getStageIndex(p.id);
+  try{
+    const history = historyFor(p);
+    const trigger = { role:'user', content:'[系统提示，不是用户发的话：用户已经很久没有主动联系你了，请你按自己的性格主动开口找TA，不要提及这是系统提示]' };
+    const reply = await callClaude(buildSystemPrompt(p, meta.mod), history.concat([trigger]), 400);
+    if(typingRow) typingRow.remove();
+    if(!data.chats[p.id]) data.chats[p.id] = [];
+    const lines = reply.split('\n').map(l=>l.trim()).filter(Boolean).slice(0,3);
+    const finalLines = lines.length ? lines : ['……'];
+    finalLines.forEach((line, i)=>{
+      const t = Date.now() + i;
+      data.chats[p.id].push({ role:'assistant', content:line, time:t });
+      if(isVisible) appendBubble('assistant', null, line, t, p.color);
+    });
+    addAffection(p, 4);
+    data.lastProactiveAt[p.id] = Date.now();
+    if(!isVisible) data.unread[p.id] = true;
+    if(isVisible) renderHeader();
+    renderPersonaList();
+    await saveAll();
+    await maybeTriggerStory(p, prevStageIdx);
+    if(getStageIndex(p.id) > prevStageIdx && isVisible){ renderHeader(); await saveAll(); }
+  }catch(e){ if(typingRow) typingRow.remove(); }
+}
+
+/* ---------- single chat send ---------- */
+async function sendMessage(){
+  if(sending) return;
+  if(currentMode==='group') return sendGroupMessage();
+  const input = el('#msg-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const p = getPersona(currentId);
+  if(!data.chats[p.id]) data.chats[p.id] = [];
+
+  const userMsg = { role:'user', content:text, time:Date.now() };
+  data.chats[p.id].push(userMsg);
+  data.lastUserAt[p.id] = Date.now();
+  appendBubble('user', null, text, userMsg.time, p.color);
+  input.value = ''; input.style.height = 'auto';
+  renderPersonaList();
+  await saveAll();
+
+  sending = true; el('#send-btn').disabled = true;
+  const typingRow = appendTyping();
+  const prevStageIdx = getStageIndex(p.id);
+  try{
+    const history = historyFor(p);
+    const reply = (await callClaude(buildSystemPrompt(p), history, 1000)) || '……';
+    typingRow.remove();
+    const aiMsg = { role:'assistant', content:reply, time:Date.now() };
+    data.chats[p.id].push(aiMsg);
+    appendBubble('assistant', null, reply, aiMsg.time, p.color);
+    addAffection(p, 3 + Math.floor(Math.random()*3));
+    renderHeader(); renderPersonaList();
+    await saveAll();
+    await maybeTriggerStory(p, prevStageIdx);
+    if(getStageIndex(p.id) > prevStageIdx){ renderHeader(); await saveAll(); }
+  }catch(e){
+    typingRow.remove();
+    appendBubble('assistant', null, '（信号好像断了一下，要不再说一次？）', Date.now(), p.color);
+  }finally{
+    sending = false; el('#send-btn').disabled = false;
+  }
+}
+
+el('#send-btn').addEventListener('click', sendMessage);
+const inputEl = el('#msg-input');
+inputEl.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } });
+inputEl.addEventListener('input', ()=>{ inputEl.style.height = 'auto'; inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px'; });
+
+el('#clear-btn').addEventListener('click', async ()=>{
+  if(currentMode==='group'){
+    if(!(await showConfirm('清空群聊记录？'))) return;
+    data.group.messages = [];
+    await saveAll(); renderGroupMessages(); return;
+  }
+  const p = getPersona(currentId);
+  if(!(await showConfirm('清空与'+p.name+'的所有对话与好感记录？'))) return;
+  data.chats[p.id] = []; data.affection[p.id] = 0; data.lastCheckin[p.id] = null; data.lastProactiveAt[p.id] = 0;
+  await saveAll();
+  renderPersonaList(); renderHeader(); renderMessages();
+});
+
+el('#menu-toggle').addEventListener('click', ()=> sidebarEl.classList.toggle('open'));
+el('#settings-btn').addEventListener('click', (e)=>{ e.stopPropagation(); el('#settings-pop').classList.toggle('open'); });
+document.addEventListener('click', (e)=>{
+  if(!el('#settings-pop').contains(e.target) && e.target.id!=='settings-btn') el('#settings-pop').classList.remove('open');
+});
+el('#set-arc').addEventListener('change', async (e)=>{ getSettings(getPersona(currentId)).arc = e.target.value; await saveAll(); });
+el('#set-proactivity').addEventListener('change', async (e)=>{ getSettings(getPersona(currentId)).proactivity = e.target.value; await saveAll(); });
+
+/* ---------- checkin ---------- */
+el('#checkin-btn').addEventListener('click', async ()=>{
+  const p = getPersona(currentId);
+  if(data.lastCheckin[p.id] === todayStr()) return;
+  data.lastCheckin[p.id] = todayStr();
+  data.lastUserAt[p.id] = Date.now();
+  const points = 10 + Math.floor(Math.random()*5);
+  if(!data.chats[p.id]) data.chats[p.id] = [];
+  data.chats[p.id].push({ role:'user', type:'checkin', points, time:Date.now() });
+  appendEvent('签到成功 · 好感 +'+points);
+  addAffection(p, points);
+  renderHeader(); renderPersonaList();
+  await saveAll();
+  sending = true; el('#send-btn').disabled = true;
+  const typingRow = appendTyping();
+  const prevStageIdx = getStageIndex(p.id);
+  try{
+    const history = historyFor(p);
+    const reply = (await callClaude(buildSystemPrompt(p), history, 400)) || '……';
+    typingRow.remove();
+    const aiMsg = { role:'assistant', content:reply, time:Date.now() };
+    data.chats[p.id].push(aiMsg);
+    appendBubble('assistant', null, reply, aiMsg.time, p.color);
+    renderPersonaList(); await saveAll();
+    await maybeTriggerStory(p, prevStageIdx);
+    if(getStageIndex(p.id) > prevStageIdx){ renderHeader(); await saveAll(); }
+  }catch(e){ typingRow.remove(); }
+  finally{ sending = false; el('#send-btn').disabled = false; }
+});
+
+/* ---------- gifts ---------- */
+function buildGiftGrid(){
+  const grid = el('#gift-grid'); grid.innerHTML = '';
+  GIFTS.forEach(g=>{
+    const card = document.createElement('div');
+    card.className = 'gift-card';
+    card.innerHTML = '<div class="gift-icon">'+g.icon+'</div><div class="gift-name">'+g.name+'</div><div class="gift-pts">好感 +'+g.points+'</div>';
+    card.onclick = ()=> sendGift(g);
+    grid.appendChild(card);
+  });
+}
+el('#gift-btn').addEventListener('click', ()=>{ buildGiftGrid(); el('#gift-overlay').classList.add('open'); });
+el('#gift-cancel').addEventListener('click', ()=> el('#gift-overlay').classList.remove('open'));
+el('#gift-overlay').addEventListener('click', (e)=>{ if(e.target.id==='gift-overlay') el('#gift-overlay').classList.remove('open'); });
+
+async function sendGift(gift){
+  el('#gift-overlay').classList.remove('open');
+  const p = getPersona(currentId);
+  if(!data.chats[p.id]) data.chats[p.id] = [];
+  data.lastUserAt[p.id] = Date.now();
+  data.chats[p.id].push({ role:'user', type:'gift', giftName:gift.name, points:gift.points, time:Date.now() });
+  appendEvent('你送出了 '+gift.name+' · 好感 +'+gift.points);
+  addAffection(p, gift.points);
+  renderHeader(); renderPersonaList();
+  await saveAll();
+  sending = true; el('#send-btn').disabled = true;
+  const typingRow = appendTyping();
+  const prevStageIdx = getStageIndex(p.id);
+  try{
+    const history = historyFor(p);
+    const reply = (await callClaude(buildSystemPrompt(p), history, 500)) || '……';
+    typingRow.remove();
+    const aiMsg = { role:'assistant', content:reply, time:Date.now() };
+    data.chats[p.id].push(aiMsg);
+    appendBubble('assistant', null, reply, aiMsg.time, p.color);
+    renderPersonaList(); await saveAll();
+    await maybeTriggerStory(p, prevStageIdx);
+    if(getStageIndex(p.id) > prevStageIdx){ renderHeader(); await saveAll(); }
+  }catch(e){ typingRow.remove(); }
+  finally{ sending = false; el('#send-btn').disabled = false; }
+}
+
+/* ---------- profile modal ---------- */
+function openProfile(p){
+  const s = getSettings(p);
+  const arcLabel = {none:'平稳发展',tsundere:'欲拒还迎',orientation_shift:'性向摇摆',love_at_first_sight:'一见钟情'}[s.arc];
+  const modal = el('#profile-modal');
+  modal.innerHTML = '';
+  const head = document.createElement('div'); head.className='profile-head';
+  head.innerHTML = '<div class="p-avatar" style="background:'+p.color+'">'+p.avatar+'</div><div><div class="profile-name">'+p.name+'</div><div class="profile-tag">'+p.tag+'</div></div>';
+  modal.appendChild(head);
+  if(p.traits && p.traits.length){
+    const tr = document.createElement('div'); tr.className='trait-row';
+    p.traits.forEach(t=>{ const c=document.createElement('span'); c.className='trait-chip'; c.textContent=t; tr.appendChild(c); });
+    modal.appendChild(tr);
+  }
+  const bio = document.createElement('div'); bio.className='profile-bio'; bio.textContent = p.bio || p.system;
+  modal.appendChild(bio);
+  const stats = document.createElement('div'); stats.className='profile-stats';
+  const pts = data.affection[p.id]||0; const idx=getStageIndex(p.id);
+  stats.innerHTML =
+    '<div class="stat-box"><div class="stat-label">关系阶段</div><div class="stat-val">'+STAGES[idx].label+'</div></div>'+
+    '<div class="stat-box"><div class="stat-label">好感值</div><div class="stat-val">'+pts+'</div></div>'+
+    '<div class="stat-box"><div class="stat-label">相识天数</div><div class="stat-val">第'+(daysSince(data.metAt[p.id])+1)+'天</div></div>'+
+    '<div class="stat-box"><div class="stat-label">性别</div><div class="stat-val">'+(p.gender||'—')+'</div></div>'+
+    '<div class="stat-box"><div class="stat-label">情感线</div><div class="stat-val">'+arcLabel+'</div></div>'+
+    '<div class="stat-box"><div class="stat-label">性向</div><div class="stat-val">'+(p.orientation||'—')+'</div></div>';
+  modal.appendChild(stats);
+  const closeRow = document.createElement('div'); closeRow.className='modal-actions';
+  const closeBtn = document.createElement('button'); closeBtn.textContent='关闭'; closeBtn.onclick=()=>el('#profile-overlay').classList.remove('open');
+  closeRow.appendChild(closeBtn); modal.appendChild(closeRow);
+  el('#profile-overlay').classList.add('open');
+}
+el('#profile-btn').addEventListener('click', ()=> openProfile(getPersona(currentId)));
+el('#profile-overlay').addEventListener('click', (e)=>{ if(e.target.id==='profile-overlay') el('#profile-overlay').classList.remove('open'); });
+
+/* ---------- group chat ---------- */
+function openGroup(){
+  currentMode = 'group';
+  data.group.unread = false;
+  updateNavDots();
+  showView('group');
+  renderHeader(); renderMessages();
+  checkGroupProactive();
+}
+el('#edit-group-btn').addEventListener('click', ()=> openGroupPicker());
+function openGroupPicker(){
+  const list = el('#group-pick-list'); list.innerHTML = '';
+  personas.forEach(p=>{
+    const row = document.createElement('label'); row.className='check-row';
+    const checked = data.group.participantIds.includes(p.id) ? 'checked' : '';
+    row.innerHTML = '<input type="checkbox" value="'+p.id+'" '+checked+'><div class="p-avatar" style="width:30px;height:30px;font-size:12px;background:'+p.color+'">'+p.avatar+'</div><span>'+p.name+' · '+p.tag+'</span>';
+    list.appendChild(row);
+  });
+  el('#group-pick-overlay').classList.add('open');
+}
+el('#group-pick-cancel').addEventListener('click', ()=> el('#group-pick-overlay').classList.remove('open'));
+el('#group-pick-overlay').addEventListener('click', (e)=>{ if(e.target.id==='group-pick-overlay') el('#group-pick-overlay').classList.remove('open'); });
+el('#group-pick-confirm').addEventListener('click', async ()=>{
+  const checked = Array.from(document.querySelectorAll('#group-pick-list input:checked')).map(i=>i.value);
+  if(checked.length < 2 || checked.length > 4){ await showAlert('请选择2到4个人'); return; }
+  data.group.participantIds = checked;
+  if(!data.group.lastActivityAt) data.group.lastActivityAt = Date.now();
+  await saveAll();
+  el('#group-pick-overlay').classList.remove('open');
+  openGroup();
+});
+
+function groupTranscript(){
+  return (data.group.messages||[]).slice(-30).map(m=> (m.role==='user' ? '我' : m.speakerName)+'：'+m.content).join('\n');
+}
+function buildGroupContextMod(p, others){
+  const namesInfo = others.map(o=> o.name+'（'+(o.occupation||o.tag)+'）').join('、');
+  return '你正在一个多人聊天群里，除了用户之外，还有：'+namesInfo+'。你们都是因为用户才认识彼此的，某种程度上互为情敌，可以直接叫对方的名字互动、吐槽、较劲、开玩笑，甚至暗暗争风吃醋，让对话有来有回；不要表现得像完全不认识、只顾自说自话的陌生人。';
+}
+async function sendGroupMessage(){
+  if(data.group.participantIds.length < 2){ openGroupPicker(); return; }
+  const input = el('#msg-input');
+  const text = input.value.trim();
+  if(!text) return;
+  data.group.messages.push({ role:'user', content:text, time:Date.now() });
+  data.group.lastActivityAt = Date.now();
+  appendBubble('user', null, text, Date.now(), '#b8607a');
+  input.value=''; input.style.height='auto';
+  await saveAll();
+
+  sending = true; el('#send-btn').disabled = true;
+  const participants = data.group.participantIds.map(id=>getPersona(id)).filter(Boolean);
+  const shuffled = participants.slice().sort(()=> Math.random()-0.5);
+  let respondents = shuffled.filter(()=> Math.random() < 0.6);
+  if(respondents.length===0) respondents = [shuffled[0]];
+  if(respondents.length > 3) respondents = respondents.slice(0,3);
+
+  for(const p of respondents){
+    const typingRow = appendTyping();
+    try{
+      const others = participants.filter(o=>o.id!==p.id);
+      const groupMod = buildGroupContextMod(p, others);
+      const prompt = groupTranscript() + '\n\n请你以'+p.name+'的身份，在群里自然地说下一句话，只输出这句话本身。';
+      const reply = await callClaude(buildSystemPrompt(p, groupMod).replace(SAFETY_MOD, GROUP_SAFETY_MOD), [{role:'user', content:prompt}], 300);
+      typingRow.remove();
+      const line = reply || '……';
+      const t = Date.now();
+      data.group.messages.push({ role:'assistant', speakerId:p.id, speakerName:p.name, content:line, time:t });
+      data.group.lastActivityAt = Date.now();
+      appendBubble('assistant', p.name, line, t, p.color);
+      addAffection(p, 2);
+    }catch(e){ typingRow.remove(); }
+  }
+  renderPersonaList();
+  await saveAll();
+  await maybeTriggerJealousy(participants);
+  sending = false; el('#send-btn').disabled = false;
+}
+
+async function maybeTriggerJealousy(participants){
+  const candidates = participants.filter(p=>{
+    if(getStageIndex(p.id) < 1) return false;
+    const lastJ = data.lastJealousyAt[p.id] || 0;
+    return (Date.now() - lastJ) / 3600000 >= 6;
+  });
+  if(!candidates.length) return;
+  if(Math.random() > 0.3) return;
+  const p = candidates[Math.floor(Math.random()*candidates.length)];
+  const others = participants.filter(o=>o.id!==p.id).map(o=>o.name).join('、');
+  if(!others) return;
+  const isVisible = currentMode==='single' && currentId===p.id;
+  let typingRow = null;
+  if(isVisible) typingRow = appendTyping();
+  try{
+    const prompt = '刚才用户拉了一个群聊，里面除了你还有：'+others+'。请你私下单独找用户，用你自己的语气对这件事做出反应——可以是纯粹好奇地问问，也可以是带点没安全感的小吃醋、试探或者不太高兴，也可以完全不在意甚至反过来打趣用户，具体反应程度和方式要符合你自己的性格和当前关系阶段，不要生硬地说"我吃醋了"这种直白的话，也不要每次反应都一样。只写1到2条很短的独立消息，每条单独一行。';
+    const history = historyFor(p);
+    const reply = await callClaude(buildSystemPrompt(p), history.concat([{role:'user', content:prompt}]), 300);
+    if(typingRow) typingRow.remove();
+    if(!data.chats[p.id]) data.chats[p.id] = [];
+    const lines = reply.split('\n').map(l=>l.trim()).filter(Boolean).slice(0,2);
+    const finalLines = lines.length ? lines : ['……'];
+    finalLines.forEach((line, i)=>{
+      const t = Date.now() + i;
+      data.chats[p.id].push({ role:'assistant', content:line, time:t });
+      if(isVisible) appendBubble('assistant', null, line, t, p.color);
+    });
+    data.lastJealousyAt[p.id] = Date.now();
+    if(!isVisible) data.unread[p.id] = true;
+    renderPersonaList();
+    if(isVisible) renderHeader();
+    await saveAll();
+  }catch(e){ if(typingRow) typingRow.remove(); }
+}
+
+const GROUP_PROACTIVE_HOURS = 30;
+async function checkGroupProactive(){
+  if(sending) return;
+  if(!data.group.participantIds || data.group.participantIds.length < 2) return;
+  const lastActivity = data.group.lastActivityAt || 0;
+  const lastProactive = data.group.lastProactiveAt || 0;
+  const hoursSince = (Date.now() - lastActivity) / 3600000;
+  if(hoursSince < GROUP_PROACTIVE_HOURS) return;
+  if(lastProactive > lastActivity) return;
+  await triggerGroupProactive();
+}
+async function triggerGroupProactive(){
+  const participants = data.group.participantIds.map(id=>getPersona(id)).filter(Boolean);
+  if(participants.length < 2) return;
+  const picked = participants[Math.floor(Math.random()*participants.length)];
+  const others = participants.filter(o=>o.id!==picked.id);
+  const isVisible = currentMode==='group';
+  let typingRow = null;
+  if(isVisible) typingRow = appendTyping();
+  try{
+    const groupMod = buildGroupContextMod(picked, others) + ' 群里已经安静了一阵子，请你按自己的性格主动开个话题，或者叫一下用户，可以提到其他人。只输出这一句话。';
+    const transcript = groupTranscript();
+    const prompt = (transcript ? transcript + '\n\n' : '') + '请你以'+picked.name+'的身份，主动在群里说一句话。';
+    const reply = await callClaude(buildSystemPrompt(picked, groupMod).replace(SAFETY_MOD, GROUP_SAFETY_MOD), [{role:'user', content:prompt}], 300);
+    if(typingRow) typingRow.remove();
+    const line = reply || '……';
+    const t = Date.now();
+    data.group.messages.push({ role:'assistant', speakerId:picked.id, speakerName:picked.name, content:line, time:t });
+    data.group.lastActivityAt = t;
+    data.group.lastProactiveAt = t;
+    addAffection(picked, 2);
+    if(isVisible) appendBubble('assistant', picked.name, line, t, picked.color);
+    else { data.group.unread = true; updateNavDots(); }
+    await saveAll();
+  }catch(e){ if(typingRow) typingRow.remove(); }
+}
+function updateNavDots(){
+  const nav = el('#nav-group');
+  if(nav) nav.innerHTML = '<span class="nav-icon">◎</span>群聊' + (data.group.unread ? '<span class="unread-dot" style="position:static;display:inline-block;margin-left:6px;"></span>' : '');
+  const anyUnread = data.group.unread || Object.values(data.unread||{}).some(Boolean);
+  const btChat = el('#bt-chat');
+  if(btChat){
+    const existingDot = btChat.querySelector('.bt-dot');
+    if(anyUnread && !existingDot){ const d = document.createElement('span'); d.className='bt-dot'; btChat.appendChild(d); }
+    if(!anyUnread && existingDot) existingDot.remove();
+  }
+}
+
+
+/* ---------- create persona ---------- */
+let selectedSwatch = SWATCHES[0];
+function buildSwatches(){
+  const c = el('#f-swatches'); c.innerHTML = '';
+  SWATCHES.forEach(color=>{
+    const s = document.createElement('div');
+    s.className = 'swatch' + (color===selectedSwatch ? ' selected' : '');
+    s.style.background = color;
+    s.onclick = ()=>{ selectedSwatch = color; buildSwatches(); };
+    c.appendChild(s);
+  });
+}
+function openCreateModal(){
+  el('#f-name').value=''; el('#f-tag').value=''; el('#f-desc').value=''; el('#f-greeting').value='';
+  el('#f-age').value=''; el('#f-occupation').value=''; el('#f-traits').value='';
+  el('#f-orientation').value='男女都有可能'; el('#f-gender').value='女'; el('#f-arc').value='none'; el('#f-proactivity').value='balanced';
+  selectedSwatch = SWATCHES[Math.floor(Math.random()*SWATCHES.length)];
+  buildSwatches();
+  el('#create-overlay').classList.add('open');
+}
+el('#f-cancel').addEventListener('click', ()=> el('#create-overlay').classList.remove('open'));
+el('#create-overlay').addEventListener('click', (e)=>{ if(e.target.id==='create-overlay') el('#create-overlay').classList.remove('open'); });
+
+el('#f-save').addEventListener('click', async ()=>{
+  const name = el('#f-name').value.trim();
+  const desc = el('#f-desc').value.trim();
+  if(!name || !desc){ await showAlert('名字和人设描述不能为空哦'); return; }
+  const id = 'custom-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+  const tag = el('#f-tag').value.trim() || '自定义角色';
+  const greeting = el('#f-greeting').value.trim() || ('你好，我是'+name+'。很高兴能认识你。');
+  const traits = el('#f-traits').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const persona = {
+    id, name, tag, avatar:name.charAt(0), color:selectedSwatch, custom:true,
+    age: el('#f-age').value.trim(), occupation: el('#f-occupation').value.trim(),
+    gender: el('#f-gender').value,
+    traits, bio: desc,
+    orientation: el('#f-orientation').value, system: desc, greeting, proactivity: el('#f-proactivity').value
+  };
+  personas.push(persona);
+  data.settings[id] = { arc: el('#f-arc').value, proactivity: el('#f-proactivity').value };
+  data.chats[id] = []; data.affection[id] = 0; data.metAt[id] = Date.now(); data.lastUserAt[id] = Date.now();
+  await saveAll();
+  el('#create-overlay').classList.remove('open');
+  renderPersonaList(); renderHome();
+  openPersonaChat(persona);
+});
+
+window.addEventListener('focus', ()=>{ runAllProactiveChecks(); });
+
+(async function init(){
+  await loadState();
+  renderPersonaList();
+  renderHome();
+  showView('home');
+  await runAllProactiveChecks();
+  renderPersonaList(); renderHome();
+})();
+</script>
+</body>
+</html>
